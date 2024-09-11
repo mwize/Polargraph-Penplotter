@@ -113,23 +113,10 @@ public class Main {
         enableMotor1.high();
         enableMotor2.high();
 
-//        for (int i = 0; i < 250; i++) {
-//            stepLeftTest(1, 200, 1);
-//        }
-//        for (int i = 0; i < 250; i++) {
-//            stepRightTest(1, 200, 1);
-//        }
-//        enableMotor1.low();
-//        enableMotor2.low();
-//        System.exit(0);
-
-
         double length = (int) Point.distance(currentPoint.x, currentPoint.y, newPoint.x, newPoint.y);
         int timeForFullLength = (int) (length*(10000)); //Time in microseconds for the full move (1 second per 10cm | 10000 microseconds per mm)
 
         for (int part = 0; part < length; part++) {
-//            double delayLeftMotor = calculateAvgDelayBetweenPoints(currentPoint, newPoint, leftMotorPositionX, leftMotorPositionY, timeForFullLength, part/length, (part+1)/length);
-//            double delayRightMotor = calculateAvgDelayBetweenPoints(currentPoint, newPoint, rightMotorPositionX, rightMotorPositionY, timeForFullLength, part/length, (part+1)/length);
             double stepsLeft = (radiusLengthForPoint(currentPoint.x, currentPoint.y, newPoint.x, newPoint.y, leftMotorPositionX, leftMotorPositionY, (part+1)/length) - currentLeftLength);
             double stepsRight = (radiusLengthForPoint(currentPoint.x, currentPoint.y, newPoint.x, newPoint.y, rightMotorPositionX, rightMotorPositionY, (part+1)/length) - currentRightLength);
             currentLeftLength += (float) stepsLeft;
@@ -160,14 +147,6 @@ public class Main {
                 }
 
             }
-
-
-//            stepLeft(stepsLeft, (int) delayLeftMotor);
-//            stepRight(stepsRight, (int) delayRightMotor);
-
-
-
-
         }
         Main.currentPoint = newPoint;
         enableMotor1.low();
