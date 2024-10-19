@@ -6,11 +6,11 @@ import java.awt.*;
 import java.util.ArrayList;
 
 public class CubicBezierCurve {
-    private Point startPoint;
-    private Point endPoint;
-    private Point controlPoint1;
-    private Point controlPoint2;
-    private Boolean isRelative;
+    private final Point startPoint;
+    private final Point endPoint;
+    private final Point controlPoint1;
+    private final Point controlPoint2;
+    private final Boolean isRelative;
     public CubicBezierCurve(Point startPoint, Point controlPoint1, Point controlPoint2, Point endPoint, Boolean isRelative)   {
         this.startPoint = new Point((int) Math.round(startPoint.x), (int) Math.round(startPoint.y));
         this.controlPoint1 = new Point((int) Math.round(controlPoint1.x), (int) Math.round(controlPoint1.y));
