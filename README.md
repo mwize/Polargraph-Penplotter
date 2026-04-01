@@ -23,7 +23,7 @@ A polargraph suspends a pen gondola from two strings that are wound around pulle
 | Stepper motors | 2× (left + right), driven via step/dir/enable pins |
 | Left motor pins | ENABLE: GPIO 4 · STEP: GPIO 18 · DIR: GPIO 24 |
 | Right motor pins | ENABLE: GPIO 12 · STEP: GPIO 19 · DIR: GPIO 13 |
-| Steps per mm | 25 (adjustable in `Main.java`) |
+| Steps per mm | 25 (adjustable in `config.properties`) |
 | Drawing area | 540 mm × 780 mm |
 | Motor spacing | 540 mm (width of the drawing surface) |
 
@@ -52,20 +52,23 @@ The project is written in **Java 17** and built with **Maven**.
 ### Project structure
 
 ```
-src/main/java/de/mwize/
-├── Main.java               # Entry point: motor control, movement logic
-├── SVGParser.java          # Parses SVG elements into lists of (x,y) points
-├── SVGPathParser.java      # Handles SVG <path> d-attribute commands
-├── elements/
-│   ├── Circle.java
-│   ├── Ellipse.java
-│   ├── Line.java
-│   ├── Polygon.java
-│   ├── Rectangle.java
-│   ├── CubicBezierCurve.java
-│   └── QuadraticBezierCurve.java
-└── utils/
-    └── BezierUtils.java    # De Casteljau / arc-length helpers
+src/main/
+├── java/de/mwize/
+│   ├── Main.java               # Entry point: motor control, movement logic
+│   ├── SVGParser.java          # Parses SVG elements into lists of (x,y) points
+│   ├── SVGPathParser.java      # Handles SVG <path> d-attribute commands
+│   ├── elements/
+│   │   ├── Circle.java
+│   │   ├── Ellipse.java
+│   │   ├── Line.java
+│   │   ├── Polygon.java
+│   │   ├── Rectangle.java
+│   │   ├── CubicBezierCurve.java
+│   │   └── QuadraticBezierCurve.java
+│   └── utils/
+│       └── BezierUtils.java    # De Casteljau / arc-length helpers
+└── resources/
+    └── config.properties       # Hardware configuration (pins, dimensions, …)
 ```
 
 ### Supported SVG elements
@@ -89,23 +92,50 @@ Supported path commands: `M/m`, `L/l`, `H/h`, `V/v`, `C/c`, `S/s`, `Q/q`, `T/t`,
 mvn package
 ```
 
+This produces two JARs in `target/`:
+- `PenPlotterSoftware-1.0-SNAPSHOT.jar` – library JAR (no dependencies)
+- `PenPlotterSoftware-1.0-SNAPSHOT-jar-with-dependencies.jar` – **self-contained runnable JAR** (copy this to the Raspberry Pi)
+
 ### Configuration
 
-Open `src/main/java/de/mwize/Main.java` and adjust the constants at the top of the file to match your setup:
+All hardware parameters are in `src/main/resources/config.properties`. Edit this file before building – no source code changes are needed.
 
-```java
-static int width = 540;          // horizontal distance between the two motors in mm
-static int height = 780;         // vertical drawing area in mm
-static String filePath = "/home/pi/Desktop/svg3.svg";  // path to the SVG file
-static int stepsPerMM = 25;      // steps required to move the belt by 1 mm
+```properties
+# Drawing area (mm)
+width=540
+height=780
+
+# Home / start position (mm)
+startX=270
+startY=70
+
+# Steps the motor must turn to move the belt 1 mm
+stepsPerMM=25
+
+# Left stepper motor GPIO pins (BCM numbering)
+pin.left.enable=4
+pin.left.step=18
+pin.left.dir=24
+
+# Right stepper motor GPIO pins (BCM numbering)
+pin.right.enable=12
+pin.right.step=19
+pin.right.dir=13
+
+# Default SVG file (used when no argument is given on the command line)
+svg.file=/home/pi/Desktop/svg3.svg
 ```
 
 ### Run
 
-Copy your SVG file to the path configured above, then:
+Copy the fat JAR and your SVG file to the Raspberry Pi, then:
 
 ```bash
-java -jar target/PenPlotterSoftware-1.0-SNAPSHOT.jar
+# Use the path from config.properties
+java -jar PenPlotterSoftware-1.0-SNAPSHOT-jar-with-dependencies.jar
+
+# Or pass the SVG path directly
+java -jar PenPlotterSoftware-1.0-SNAPSHOT-jar-with-dependencies.jar /path/to/drawing.svg
 ```
 
 The plotter will:

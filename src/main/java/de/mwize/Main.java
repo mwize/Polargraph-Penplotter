@@ -6,44 +6,78 @@ import com.pi4j.io.gpio.digital.DigitalOutput;
 
 import java.awt.*;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Properties;
 
 public class Main {
 
-    //left stepper motor
-    private static final int PIN_ENABLE = 4;
-    private static final int PIN_STEP = 18;
-    private static final int PIN_DIR = 24;
+    // GPIO pin numbers – loaded from config.properties
+    private static int PIN_ENABLE;
+    private static int PIN_STEP;
+    private static int PIN_DIR;
+    private static int PIN_ENABLE2;
+    private static int PIN_STEP2;
+    private static int PIN_DIR2;
 
-    //right stepper motor
-    private static final int PIN_ENABLE2 = 12;
-    private static final int PIN_STEP2 = 19;
-    private static final int PIN_DIR2 = 13;
-    
-    static int width = 540;
-    static int height = 780;
-    static Point startPoint = new Point(width / 2, 70);
-    static Point currentPoint = startPoint;
-    static String filePath = "/home/pi/Desktop/svg3.svg"; //path of the svg file
+    static int width;
+    static int height;
+    static Point startPoint;
+    static Point currentPoint;
+    static int stepsPerMM;
 
-    static int stepsPerMM = 25; //The number of steps the stepper motor has to turn to move the timing belt by 1 mm
+    // Pi4J context and GPIO pins – initialised in main()
+    static Context pi4j;
+    static DigitalOutput step;
+    static DigitalOutput step2;
+    static DigitalOutput enableMotor1;
+    static DigitalOutput enableMotor2;
+    static DigitalOutput dir;
+    static DigitalOutput dir2;
 
-
-    static Context pi4j = Pi4J.newAutoContext();
-    static DigitalOutput step = pi4j.digitalOutput().create(PIN_STEP);
-    static DigitalOutput step2 = pi4j.digitalOutput().create(PIN_STEP2);
-    static DigitalOutput enableMotor1 = pi4j.digitalOutput().create(PIN_ENABLE);
-    static DigitalOutput enableMotor2 = pi4j.digitalOutput().create(PIN_ENABLE2);
-    static DigitalOutput dir = pi4j.digitalOutput().create(PIN_DIR);
-    static DigitalOutput dir2 = pi4j.digitalOutput().create(PIN_DIR2);
-
-    static float currentLeftLength = (float) (Math.sqrt(Math.pow(startPoint.x, 2) + Math.pow(startPoint.y, 2)) * stepsPerMM);
-    static float currentRightLength = (float) (Math.sqrt(Math.pow(width - startPoint.x, 2) + Math.pow(startPoint.y, 2)) * stepsPerMM);
+    static float currentLeftLength;
+    static float currentRightLength;
 
     static double fullStepLeft = 0;
     static double fullStepRight = 0;
 
     public static void main(String[] args) throws InterruptedException, IOException {
+
+        // Load hardware configuration
+        Properties config = loadConfig();
+        width      = Integer.parseInt(config.getProperty("width",      "540"));
+        height     = Integer.parseInt(config.getProperty("height",     "780"));
+        stepsPerMM = Integer.parseInt(config.getProperty("stepsPerMM", "25"));
+
+        int startX = Integer.parseInt(config.getProperty("startX", String.valueOf(width / 2)));
+        int startY = Integer.parseInt(config.getProperty("startY", "70"));
+
+        PIN_ENABLE  = Integer.parseInt(config.getProperty("pin.left.enable",  "4"));
+        PIN_STEP    = Integer.parseInt(config.getProperty("pin.left.step",    "18"));
+        PIN_DIR     = Integer.parseInt(config.getProperty("pin.left.dir",     "24"));
+        PIN_ENABLE2 = Integer.parseInt(config.getProperty("pin.right.enable", "12"));
+        PIN_STEP2   = Integer.parseInt(config.getProperty("pin.right.step",   "19"));
+        PIN_DIR2    = Integer.parseInt(config.getProperty("pin.right.dir",    "13"));
+
+        // SVG file: first CLI argument, then config file, then built-in default
+        String filePath = args.length > 0
+                ? args[0]
+                : config.getProperty("svg.file", "/home/pi/Desktop/svg3.svg");
+
+        startPoint   = new Point(startX, startY);
+        currentPoint = startPoint;
+
+        currentLeftLength  = (float) (Math.sqrt(Math.pow(startPoint.x, 2) + Math.pow(startPoint.y, 2)) * stepsPerMM);
+        currentRightLength = (float) (Math.sqrt(Math.pow(width - startPoint.x, 2) + Math.pow(startPoint.y, 2)) * stepsPerMM);
+
+        // Initialise GPIO
+        pi4j         = Pi4J.newAutoContext();
+        step         = pi4j.digitalOutput().create(PIN_STEP);
+        step2        = pi4j.digitalOutput().create(PIN_STEP2);
+        enableMotor1 = pi4j.digitalOutput().create(PIN_ENABLE);
+        enableMotor2 = pi4j.digitalOutput().create(PIN_ENABLE2);
+        dir          = pi4j.digitalOutput().create(PIN_DIR);
+        dir2         = pi4j.digitalOutput().create(PIN_DIR2);
 
         System.out.println(radiusLengthForPoint(startPoint.x, startPoint.y, 100, 100, 0, 0, 0) + " " + startPoint);
         System.out.println(Point.distance(startPoint.x, startPoint.y, 100, 100));
@@ -174,5 +208,20 @@ public class Main {
             enableMotor1.low();
             enableMotor2.low();
         }
+    }
+
+    private static Properties loadConfig() {
+        Properties config = new Properties();
+        try (InputStream in = Main.class.getResourceAsStream("/config.properties")) {
+            if (in != null) {
+                config.load(in);
+            } else {
+                System.out.println("config.properties not found on classpath. " +
+                        "Using built-in defaults (width=540, height=780, stepsPerMM=25, BCM pins: left=4/18/24, right=12/19/13).");
+            }
+        } catch (IOException e) {
+            System.err.println("Failed to load config.properties: " + e.getMessage() + ". Continuing with built-in defaults.");
+        }
+        return config;
     }
 }
