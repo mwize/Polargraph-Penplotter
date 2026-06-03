@@ -6,14 +6,8 @@ A Raspberry Pi–controlled polargraph (wall plotter) that reads SVG files and r
 
 A polargraph suspends a pen gondola from two strings that are wound around pulleys driven by stepper motors mounted at the top-left and top-right corners of the drawing area. By adjusting the length of each string independently the gondola can be moved to any point within the reachable area. The software converts an SVG image into a sequence of (x, y) coordinates and then translates each movement into the precise number of steps each motor must turn.
 
-```
-  [Motor L] ────────────────── [Motor R]
-       \                           /
-        \                         /
-         \                       /
-          \                     /
-           ●  ← pen gondola
-```
+![Image of Polargraph Pen Plotter](plotter.png)
+
 
 ## Hardware
 
